@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ผู้ดูแลระบบ - วิทยาลัยอาชีวศึกษาสระบุรี</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body { font-family: 'Inter', 'Kanit', sans-serif; }
+        .loader { border-top-color: #3b82f6; animation: spin 1s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .animate-fade-in { animation: fadeIn 0.5s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+        .custom-scrollbar::-webkit-scrollbar { width: 8px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #1e293b; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #475569; border-radius: 10px; }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-100 min-h-screen p-4">
+
+    <div class="max-w-4xl mx-auto">
+        <header class="flex items-center justify-between mb-8">
+            <div class="flex items-center space-x-3">
+                <i data-lucide="settings" class="text-green-500 w-8 h-8"></i>
+                <div>
+                    <h1 class="text-2xl font-bold">ผู้ดูแลระบบ</h1>
+                    <p class="text-sm text-gray-400">วิทยาลัยอาชีวศึกษาสระบุรี</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2">
+                <button onclick="window.location.href='index.html'" class="text-gray-400 hover:bg-gray-700 rounded-lg text-sm p-2.5" title="ลงทะเบียน">
+                    <i data-lucide="user-plus" class="w-5 h-5"></i>
+                </button>
+                <button onclick="window.location.href='checkin.html'" class="text-gray-400 hover:bg-gray-700 rounded-lg text-sm p-2.5" title="เช็คชื่อ">
+                    <i data-lucide="clipboard-check" class="w-5 h-5"></i>
+                </button>
+                <button onclick="toggleTheme()" type="button" class="text-gray-400 hover:bg-gray-700 rounded-lg text-sm p-2.5">
+                    <i data-lucide="sun" id="theme-icon-sun" class="hidden w-5 h-5"></i>
+                    <i data-lucide="moon" id="theme-icon-moon" class="w-5 h-5"></i>
+                </button>
+            </div>
+        </header>
+
+        <div id="alert" class="p-3 rounded-lg text-sm mb-6 hidden" role="alert"></div>
+
+        <!-- Login Section -->
+        <div id="login-section" class="bg-gray-800 p-8 rounded-lg shadow-lg max-w-md mx-auto">
+            <h2 class="text-xl font-bold mb-4 text-center">เข้าสู่ระบบผู้ดูแล</h2>
+            <p class="text-gray-400 mb-6 text-center">วิทยาลัยอาชีวศึกษาสระบุรี</p>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">รหัสผ่าน</label>
+                    <input type="password" id="admin-password-input" class="w-full rounded-md border-gray-600 bg-gray-700 text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-3" placeholder="กรอกรหัสผ่านผู้ดูแล">
+                </div>
+                <button onclick="verifyAdminPassword()" class="w-full bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 flex items-center justify-center gap-2">
+                    <i data-lucide="log-in"></i>
+                    <span>เข้าสู่ระบบ</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Admin Panel (hidden by default) -->
+        <div id="admin-panel" class="hidden space-y-6">
+            <!-- Settings Section -->
+            <div class="bg-gray-800 p-6 rounded-lg shadow-lg">
+                <h2 class="text-lg font-semibold mb-4 flex items-center gap-2">
+                    <i data-lucide="sliders" class="w-5 h-5"></i>
+                    การตั้งค่าระบบ
+                </h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-2">เวลาเลท (สาย)</label>
+                            <input type="time" id="late-time" value="08:30" class="w-full rounded-md border-gray-600 bg-gray-700 text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-3">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-2">เวลาขาด</label>
+                            <input type="time" id="absent-time" value="12:00" class="w-full rounded-md border-gray-600 bg-gray-700 text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-3">
+                        </div>
+                    </div>
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between">
+                            <label class="block text-sm font-medium text-gray-300">ตรวจสอบตำแหน่ง</label>
+                            <input type="checkbox" id="check-location" class="rounded border-gray-600 bg-gray-700 text-blue-500 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-2">ละติจูดจุดเช็คชื่อ</label>
+                            <input type="number" step="any" id="check-lat" class="w-full rounded-md border-gray-600 bg-gray-700 text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-3" placeholder="14.529621">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-2">ลองจิจูดจุดเช็คชื่อ</label>
+                            <input type="number" step="any" id="check-lng" class="w-full rounded-md border-gray-600 bg-gray-700 text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-3" placeholder="100.908322">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-2">รัศมีที่อนุญาต (เมตร)</label>
+                            <input type="number" id="check-radius" value="50" class="w-full rounded-md border-gray-600 bg-gray-700 text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-3">
+                        </div>
+                        <button onclick="getCurrentLocation()" class="w-full bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center justify-center gap-2">
+                            <i data-lucide="map-pin"></i>
+                            <span>ใช้ตำแหน่งปัจจุบัน</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="mt-6 flex justify-end">
+                    <button onclick="saveSettings()" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-2">
+                        <i data-lucide="save"></i>
+                        <span>บันทึกการตั้งค่า</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- System Info -->
+            <div class="bg-gray-800 p-6 rounded-lg shadow-lg">
+                <h2 class="text-lg font-semibold mb-4 flex items-center gap-2">
+                    <i data-lucide="info" class="w-5 h-5"></i>
+                    ข้อมูลระบบ
+                </h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="bg-gray-700 p-4 rounded-lg">
+                        <h3 class="text-gray-300 text-sm">Web App URL</h3>
+                        <p id="webapp-url" class="text-blue-400 text-sm truncate">-</p>
+                    </div>
+                    <div class="bg-gray-700 p-4 rounded-lg">
+                        <h3 class="text-gray-300 text-sm">สถานะการเชื่อมต่อ</h3>
+                        <p id="connection-status" class="text-green-400 text-sm">พร้อมใช้งาน</p>
+                    </div>
+                    <div class="bg-gray-700 p-4 rounded-lg">
+                        <h3 class="text-gray-300 text-sm">เวอร์ชัน</h3>
+                        <p class="text-gray-400 text-sm">2.0.0</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="bg-gray-800 p-6 rounded-lg shadow-lg">
+                <h2 class="text-lg font-semibold mb-4 flex items-center gap-2">
+                    <i data-lucide="zap" class="w-5 h-5"></i>
+                    การดำเนินการด่วน
+                </h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <button onclick="clearLocalStorage()" class="bg-yellow-600 text-white px-4 py-3 rounded-lg hover:bg-yellow-700 flex items-center justify-center gap-2">
+                        <i data-lucide="trash-2"></i>
+                        <span>ล้างข้อมูลท้องถิ่น</span>
+                    </button>
+                    <button onclick="resetSettings()" class="bg-red-600 text-white px-4 py-3 rounded-lg hover:bg-red-700 flex items-center justify-center gap-2">
+                        <i data-lucide="refresh-cw"></i>
+                        <span>รีเซ็ตการตั้งค่า</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+
+        let gasWebAppUrl = localStorage.getItem('gasWebAppUrl') || '';
+
+        window.addEventListener('DOMContentLoaded', async () => {
+            await autoConfigureWebAppUrl();
+            toggleTheme(true);
+            
+            // Check if already logged in
+            const adminPassword = localStorage.getItem('adminPassword');
+            if (adminPassword) {
+                // Try to verify the saved password
+                try {
+                    const response = await apiCall({ action: 'getSettings' });
+                    if (response.success && response.data.adminPassword === adminPassword) {
+                        showAdminPanel();
+                    } else {
+                        localStorage.removeItem('adminPassword');
+                    }
+                } catch (error) {
+                    localStorage.removeItem('adminPassword');
+                }
+            }
+        });
+
+        // ฟังก์ชันดึง URL อัตโนมัติ
+        async function autoConfigureWebAppUrl() {
+            try {
+                // ลองใช้ URL จาก localStorage ก่อน
+                let savedUrl = localStorage.getItem('gasWebAppUrl');
+                
+                if (savedUrl) {
+                    gasWebAppUrl = savedUrl;
+                    return;
+                }
+
+                // ลองใช้ URL เริ่มต้นจาก Google Apps Script
+                const possibleUrls = [
+                    'https://script.google.com/macros/s/AKfycbx5j3kndJq9Uf5Yp6Y7V9ZvQ8e3Q6Xq9Z7Y8X9Y0/exec',
+                    'https://script.google.com/macros/s/AKfycby3_7XvJ9qY3vQ6Xq9Z7Y8X9Y0/exec'
+                ];
+
+                for (let url of possibleUrls) {
+                    try {
+                        const response = await fetch(url + '?action=getWebAppUrl');
+                        if (response.ok) {
+                            const data = await response.json();
+                            if (data.success) {
+                                gasWebAppUrl = data.webAppUrl;
+                                localStorage.setItem('gasWebAppUrl', gasWebAppUrl);
+                                break;
+                            }
+                        }
+                    } catch (e) {
+                        continue;
+                    }
+                }
+
+                // ถ้าไม่สามารถเชื่อมต่อได้ ให้ใช้ URL เริ่มต้น
+                if (!gasWebAppUrl) {
+                    gasWebAppUrl = 'https://script.google.com/macros/s/AKfycbx5j3kndJq9Uf5Yp6Y7V9ZvQ8e3Q6Xq9Z7Y8X9Y0/exec';
+                    localStorage.setItem('gasWebAppUrl', gasWebAppUrl);
+                }
+
+            } catch (error) {
+                console.error('Auto-configure error:', error);
+            }
+        }
+
+        async function verifyAdminPassword() {
+            const password = document.getElementById('admin-password-input').value;
+            
+            if (!password) {
+                showAlert('alert', 'กรุณากรอกรหัสผ่าน', 'error');
+                return;
+            }
+            
+            try {
+                const response = await apiCall({
+                    action: 'getSettings'
+                });
+                
+                if (response.success) {
+                    if (response.data.adminPassword === password) {
+                        localStorage.setItem('adminPassword', password);
+                        showAdminPanel();
+                        showAlert('alert', 'เข้าสู่ระบบสำเร็จ', 'success');
+                    } else {
+                        showAlert('alert', 'รหัสผ่านไม่ถูกต้อง', 'error');
+                    }
+                } else {
+                    showAlert('alert', 'เกิดข้อผิดพลาดในการตรวจสอบ', 'error');
+                }
+            } catch (error) {
+                showAlert('alert', 'เกิดข้อผิดพลาด: ' + error.message, 'error');
+            }
+        }
+
+        function showAdminPanel() {
+            document.getElementById('login-section').classList.add('hidden');
+            document.getElementById('admin-panel').classList.remove('hidden');
+            loadSettings();
+            updateSystemInfo();
+        }
+
+        async function loadSettings() {
+            try {
+                const response = await apiCall({ action: 'getSettings' });
+                if (response.success) {
+                    const settings = response.data;
+                    
+                    // อัพเดตฟอร์มการตั้งค่า
+                    document.getElementById('late-time').value = settings.lateTime || '08:30';
+                    document.getElementById('absent-time').value = settings.absentTime || '12:00';
+                    document.getElementById('check-location').checked = settings.checkLocation === 'true';
+                    document.getElementById('check-lat').value = settings.checkLat || '14.529621';
+                    document.getElementById('check-lng').value = settings.checkLng || '100.908322';
+                    document.getElementById('check-radius').value = settings.checkRadius || '50';
+                    
+                    // อัพเดตค่าใน localStorage
+                    localStorage.setItem('lateTime', settings.lateTime || '08:30');
+                    localStorage.setItem('absentTime', settings.absentTime || '12:00');
+                }
+            } catch (error) {
+                console.error('Error loading settings:', error);
+                showAlert('alert', 'ไม่สามารถโหลดการตั้งค่าได้', 'error');
+            }
+        }
+
+        function updateSystemInfo() {
+            document.getElementById('webapp-url').textContent = gasWebAppUrl || '-';
+        }
+
+        async function saveSettings() {
+            const adminPassword = localStorage.getItem('adminPassword');
+            const checkLocation = document.getElementById('check-location').checked;
+            const checkLat = document.getElementById('check-lat').value;
+            const checkLng = document.getElementById('check-lng').value;
+            const checkRadius = document.getElementById('check-radius').value;
+            const lateTime = document.getElementById('late-time').value;
+            const absentTime = document.getElementById('absent-time').value;
+            
+            if (!checkLat || !checkLng) {
+                showAlert('alert', 'กรุณากรอกตำแหน่งจุดเช็คชื่อ', 'error');
+                return;
+            }
+            
+            try {
+                const response = await apiCall({
+                    action: 'updateSettings',
+                    data: {
+                        adminPassword,
+                        checkLocation: checkLocation.toString(),
+                        checkLat,
+                        checkLng,
+                        checkRadius,
+                        lateTime,
+                        absentTime
+                    }
+                });
+                
+                if (response.success) {
+                    showAlert('alert', 'บันทึกการตั้งค่าเรียบร้อย', 'success');
+                    // อัพเดตค่าใน localStorage
+                    localStorage.setItem('lateTime', lateTime);
+                    localStorage.setItem('absentTime', absentTime);
+                } else {
+                    showAlert('alert', 'ไม่สามารถบันทึกการตั้งค่า: ' + response.error, 'error');
+                }
+            } catch (error) {
+                showAlert('alert', 'เกิดข้อผิดพลาด: ' + error.message, 'error');
+            }
+        }
+
+        function getCurrentLocation() {
+            if (navigator.geolocation) {
+                showAlert('alert', 'กำลังรับตำแหน่งปัจจุบัน...', 'info');
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        document.getElementById('check-lat').value = position.coords.latitude.toFixed(6);
+                        document.getElementById('check-lng').value = position.coords.longitude.toFixed(6);
+                        showAlert('alert', 'รับตำแหน่งปัจจุบันเรียบร้อย', 'success');
+                    },
+                    (error) => {
+                        showAlert('alert', 'ไม่สามารถรับตำแหน่งได้: ' + error.message, 'error');
+                    },
+                    {
+                        enableHighAccuracy: true,
+                        timeout: 10000,
+                        maximumAge: 0
+                    }
+                );
+            } else {
+                showAlert('alert', 'เบราว์เซอร์ไม่รองรับการรับตำแหน่ง', 'error');
+            }
+        }
+
+        function clearLocalStorage() {
+            if (confirm('คุณแน่ใจหรือไม่ที่จะล้างข้อมูลท้องถิ่นทั้งหมด?')) {
+                localStorage.clear();
+                showAlert('alert', 'ล้างข้อมูลท้องถิ่นเรียบร้อย', 'success');
+                setTimeout(() => {
+                    window.location.reload();
+                }, 2000);
+            }
+        }
+
+        async function resetSettings() {
+            if (confirm('คุณแน่ใจหรือไม่ที่จะรีเซ็ตการตั้งค่าทั้งหมด?')) {
+                try {
+                    const adminPassword = localStorage.getItem('adminPassword');
+                    const response = await apiCall({
+                        action: 'updateSettings',
+                        data: {
+                            adminPassword,
+                            checkLocation: 'true',
+                            checkLat: '14.529621',
+                            checkLng: '100.908322',
+                            checkRadius: '50',
+                            lateTime: '08:30',
+                            absentTime: '12:00'
+                        }
+                    });
+                    
+                    if (response.success) {
+                        showAlert('alert', 'รีเซ็ตการตั้งค่าเรียบร้อย', 'success');
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 2000);
+                    } else {
+                        showAlert('alert', 'ไม่สามารถรีเซ็ตการตั้งค่า: ' + response.error, 'error');
+                    }
+            } catch (error) {
+                showAlert('alert', 'เกิดข้อผิดพลาด: ' + error.message, 'error');
+            }
+            }
+        }
+
+        function toggleTheme(initialLoad = false) {
+            const sunIcon = document.getElementById('theme-icon-sun');
+            const moonIcon = document.getElementById('theme-icon-moon');
+            const currentTheme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+            
+            if (initialLoad) {
+                const savedTheme = localStorage.getItem('theme') || 'dark';
+                if (savedTheme === 'light') {
+                    document.documentElement.classList.remove('dark');
+                    sunIcon.classList.remove('hidden');
+                    moonIcon.classList.add('hidden');
+                } else {
+                    document.documentElement.classList.add('dark');
+                    sunIcon.classList.add('hidden');
+                    moonIcon.classList.remove('hidden');
+                }
+                return;
+            }
+            
+            if (currentTheme === 'dark') {
+                document.documentElement.classList.remove('dark');
+                localStorage.setItem('theme', 'light');
+                sunIcon.classList.remove('hidden');
+                moonIcon.classList.add('hidden');
+            } else {
+                document.documentElement.classList.add('dark');
+                localStorage.setItem('theme', 'dark');
+                sunIcon.classList.add('hidden');
+                moonIcon.classList.remove('hidden');
+            }
+        }
+
+        function showAlert(elementId, message, type = 'info') {
+            const alertEl = document.getElementById(elementId);
+            alertEl.textContent = message;
+            alertEl.className = `p-3 rounded-lg text-sm mb-6 ${type === 'error' ? 'bg-red-900/50 text-red-200' : type === 'success' ? 'bg-green-900/50 text-green-200' : type === 'warning' ? 'bg-yellow-900/50 text-yellow-200' : 'bg-blue-900/50 text-blue-200'}`;
+            alertEl.classList.remove('hidden');
+            setTimeout(() => { alertEl.classList.add('hidden'); }, 5000);
+        }
+
+        async function apiCall(payload) {
+            if (!gasWebAppUrl) {
+                throw new Error('กรุณาตั้งค่า GAS URL ก่อน');
+            }
+            
+            try {
+                const response = await fetch(gasWebAppUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                return data;
+            } catch (error) {
+                console.error('API call failed:', error);
+                throw error;
+            }
+        }
+    </script>
+</body>
+</html>
